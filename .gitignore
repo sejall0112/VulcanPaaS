@@ -1,0 +1,27 @@
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+logs/*
+!logs/README.md
+
+# Environment files
+.env
+.env.*
+
+# Docker
+**/node_modules
+**/dist
+**/.docker
+
+# WSL
+*.vhdx
+
+# IDEs
+.vscode/
+.idea/
+
+# Temporary
+*.tmp
+*.log
