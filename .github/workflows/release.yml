@@ -1,0 +1,35 @@
+name: Release
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  release-dev:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to DEV (placeholder)
+        run: echo "Deploying to DEV..."
+
+  release-stage:
+    runs-on: ubuntu-latest
+    needs: release-dev
+    environment: stage
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to STAGE (placeholder)
+        run: echo "Deploying to STAGE..."
+
+  release-prod:
+    runs-on: ubuntu-latest
+    needs: release-stage
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to PROD (placeholder)
+        run: echo "Deploying to PROD..."
