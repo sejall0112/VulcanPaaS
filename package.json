@@ -3,22 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
-    "test": "echo \"No tests yet – backend is PowerShell-based\""
+    "test": "node -e \"const { health } = require('./src/health'); const r = health(); if (!r.ok) { console.error('Health check failed'); process.exit(1); } console.log('Health check passed:', r);\""
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sejall0112/VulcanPaaS.git"
-  },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/sejall0112/VulcanPaaS/issues"
-  },
-  "homepage": "https://github.com/sejall0112/VulcanPaaS#readme"
+  "type": "commonjs"
 }
