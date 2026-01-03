@@ -1,11 +1,15 @@
 {
   "name": "vulcanpaas",
   "version": "1.0.0",
-  "description": "",
+  "description": "Mini Platform-as-a-Service with CI/CD, metrics, and health checks",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
+    "start": "node index.js",
     "test": "node -e \"const { health } = require('./src/health'); const r = health(); if (!r.ok) { console.error('Health check failed'); process.exit(1); } console.log('Health check passed:', r);\""
   },
   "license": "ISC",
-  "type": "commonjs"
+  "dependencies": {
+    "prom-client": "^15.1.3"
+  }
 }
