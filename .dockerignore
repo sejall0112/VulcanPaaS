@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/build
+**/.next
+**/coverage
+**/.git
+**/.github
+**/.vscode
+**/*.log
+.env
+.env.*
+logs/*

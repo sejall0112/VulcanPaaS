@@ -1,0 +1,59 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: "Vulcan Alerts"
+    folder: "VulcanPaaS"
+    interval: 30s
+    rules:
+      - uid: vulcan-app-down
+        title: "Vulcan API down"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: up{job="vulcan-api"} == 0
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: A
+              type: math
+              refId: C
+        for: 1m
+        annotations:
+          summary: "Vulcan API is not being scraped by Prometheus."
+        labels:
+          severity: critical
+        isPaused: false
+
+      - uid: vulcan-high-5xx
+        title: "High 5xx rate (Vulcan)"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: sum(rate(http_requests_total{status=~"5.."}[5m]))
+              instant: true
+              refId: A
+          - refId: B
+            datasourceUid: prometheus
+            model:
+              expr: sum(rate(http_requests_total[5m]))
+              instant: true
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: (A / clamp_min(B, 1e-9)) > 0.05
+              type: math
+              refId: C
+        for: 2m
+        annotations:
+          summary: "More than 5% of requests are 5xx (5m window)."
+        labels:
+          severity: warning
+        isPaused: false
