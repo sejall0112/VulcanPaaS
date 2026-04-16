@@ -1,0 +1,9 @@
+﻿.env
+node_modules/
+dist/
+build/
+*.log
+*.deb
+.DS_Store
+Thumbs.db
+temp.txt

@@ -1,0 +1,85 @@
+{
+  "uid": "vulcan",
+  "id": 1,
+  "title": "VulcanPaaS System Metrics",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m"],
+    "time_options": ["5m", "15m", "1h", "6h", "24h"]
+  },
+  "panels": [
+    {
+      "id": 4,
+      "type": "text",
+      "title": "Metrics Legend & Explanation",
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "content": "### Live API Infrastructure Traffic\n\nThis dashboard monitors all HTTP requests passing through the VulcanPaaS API Gateway, scraped in real-time by **Prometheus**. \n\n<br/>\n\n#### 🔵 GET /api/deployments\n**Background Polling**: This represents standard dashboard traffic. The React frontend constantly polls this endpoint to update the UI state. Steady, low-level spikes here indicate active users viewing the dashboard metrics in real-time.\n\n#### 🟢 POST /webhook/github\n**Deployment Automation**: This endpoint spikes the exact moment a developer pushes code to their repository. A spike here means the webhook successfully reached VulcanPaaS, successfully triggering the **DeepSeek AI review engine** and the CI/CD pipeline.\n\n#### 🟣 POST /.../rollback\n**Version Control Tracker**: A spike here shows that an automated fallback (or manual rollback via the dashboard) was executed to quickly restore a previously stable container state.\n\n#### 🔴 Any 5xx Status Code\n**System Alerts / Error Tracking**: Any traffic here is highly critical. It tracks active server crashes, unhandled exceptions during the build phase, or infrastructure-level failures within isolated user Docker containers.",
+        "mode": "markdown"
+      }
+    },
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "API Request Rate (req/s)",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 3 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity"
+          },
+          "unit": "reqps"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[1m])",
+          "legendFormat": "{{method}} {{route}} ({{status}})",
+          "datasource": "Prometheus",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total Requests",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 13 },
+      "targets": [
+        {
+          "expr": "sum(http_requests_total)",
+          "legendFormat": "Total",
+          "datasource": "Prometheus",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Active Req Rate",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 13 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m]))",
+          "legendFormat": "req/s",
+          "datasource": "Prometheus",
+          "refId": "C"
+        }
+      ]
+    }
+  ]
+}
