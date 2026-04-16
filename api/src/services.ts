@@ -188,7 +188,7 @@ export function buildAndDeployApp(
         deployments.forEach(d => {
           if (d.id !== deploymentId && d.repo === deployment.repo &&
               d.branch === deployment.branch && d.status === 'active') {
-            d.status = 'failed';
+            d.status = 'superseded';
           }
         });
       }
@@ -287,3 +287,4 @@ export function cloneOrPullRepo(cloneUrl: string, repoName: string, branch: stri
     });
   });
 }
+
