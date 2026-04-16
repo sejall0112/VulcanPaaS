@@ -1,0 +1,124 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VulcanPaaS — AI DevOps Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0a0a0f;--surface:#13131f;--card:#1a1a2e;--border:rgba(255,255,255,0.07);--primary:#ff4d00;--muted:#94a3b8;--text:#f1f5f9}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% -20%,rgba(255,77,0,.15) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 80%,rgba(124,58,237,.1) 0%,transparent 50%);pointer-events:none}
+    .wrap{max-width:1100px;margin:0 auto;padding:0 2rem;position:relative;z-index:1}
+    nav{padding:1.5rem 0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+    .logo{display:flex;align-items:center;gap:.75rem;font-size:1.25rem;font-weight:800}
+    .logo-icon{font-size:1.75rem;animation:glow 3s ease-in-out infinite}
+    @keyframes glow{0%,100%{filter:drop-shadow(0 0 10px rgba(255,77,0,.8))}50%{filter:drop-shadow(0 0 24px rgba(255,77,0,1))}}
+    .nav-links{display:flex;gap:.75rem}
+    .nav-links a{padding:.5rem 1rem;border-radius:8px;text-decoration:none;font-size:.85rem;font-weight:500;transition:all .2s}
+    .btn-nav-primary{background:var(--primary);color:#fff}.btn-nav-primary:hover{background:#e63e00;box-shadow:0 0 20px rgba(255,77,0,.4)}
+    .btn-nav-ghost{color:var(--muted);border:1px solid var(--border)}.btn-nav-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+    .hero{text-align:center;padding:6rem 0 4rem}
+    .badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,77,0,.1);border:1px solid rgba(255,77,0,.3);border-radius:999px;padding:.35rem 1rem;font-size:.8rem;color:#ff7a33;margin-bottom:2rem}
+    .badge::before{content:'●';animation:blink 1.5s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;letter-spacing:-2px;line-height:1.05;margin-bottom:1.5rem}
+    h1 span{background:linear-gradient(135deg,#ff4d00,#ff9a00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-sub{font-size:1.15rem;color:var(--muted);max-width:560px;margin:0 auto 2.5rem;line-height:1.7}
+    .cta-group{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+    .btn{padding:.85rem 2rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:.95rem;transition:all .2s;display:inline-flex;align-items:center;gap:.5rem}
+    .btn-primary{background:linear-gradient(135deg,#ff4d00,#ff7a00);color:#fff;box-shadow:0 4px 24px rgba(255,77,0,.4)}.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(255,77,0,.5)}
+    .btn-ghost{border:1px solid var(--border);color:var(--text);background:var(--surface)}.btn-ghost:hover{border-color:rgba(255,255,255,.2);transform:translateY(-2px)}
+    .status-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.5rem;display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin:3rem 0}
+    .si{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--muted)}
+    .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:blink 2s ease-in-out infinite}
+    .dot.y{background:#eab308;box-shadow:0 0 8px #eab308}
+    .sec-title{text-align:center;font-size:2rem;font-weight:800;letter-spacing:-1px;margin-bottom:.75rem}
+    .sec-sub{text-align:center;color:var(--muted);margin-bottom:3rem}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin-bottom:4rem}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.75rem;transition:all .3s}
+    .card:hover{border-color:rgba(255,77,0,.3);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+    .card-icon{font-size:2rem;margin-bottom:1rem}
+    .card h3{font-size:1.05rem;font-weight:700;margin-bottom:.5rem}
+    .card p{font-size:.88rem;color:var(--muted);line-height:1.6}
+    .pipeline{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:4rem}
+    .pipeline h3{font-weight:700;margin-bottom:1.5rem}
+    .steps{display:flex;align-items:center;flex-wrap:wrap;gap:0}
+    .step{flex:1;min-width:100px;text-align:center;padding:.75rem .25rem}
+    .step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff4d00,#ff7a00);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;margin:0 auto .5rem}
+    .step-label{font-size:.7rem;color:var(--muted)}
+    .arrow{color:rgba(255,77,0,.4);font-size:1.25rem;flex-shrink:0}
+    .links{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:4rem}
+    .lc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-decoration:none;color:var(--text);transition:all .25s;display:flex;align-items:center;gap:1rem}
+    .lc:hover{border-color:rgba(255,77,0,.4);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+    .lc-icon{font-size:1.5rem}
+    .lc-label{font-size:.78rem;color:var(--muted)}
+    .lc-name{font-weight:600;font-size:.95rem}
+    footer{border-top:1px solid var(--border);padding:2rem 0;text-align:center;color:var(--muted);font-size:.85rem}
+    footer span{color:var(--primary)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo"><span class="logo-icon">🌋</span>VulcanPaaS</div>
+    <div class="nav-links">
+      <a href="/" class="btn-nav-ghost">Dashboard</a>
+      <a href="/grafana/" class="btn-nav-ghost">Grafana</a>
+      <a href="/api/health" class="btn-nav-primary">API Status</a>
+    </div>
+  </nav>
+  <section class="hero">
+    <div class="badge">Live Platform — AI DevOps</div>
+    <h1>Deploy Smarter.<br/><span>Ship Faster.</span></h1>
+    <p class="hero-sub">VulcanPaaS auto-deploys your GitHub repos with AI code review, real-time metrics, and a live control dashboard — all on your own infrastructure.</p>
+    <div class="cta-group">
+      <a href="/" class="btn btn-primary">🔥 Open Dashboard</a>
+      <a href="https://github.com/sejall0112/vulcanpaas" class="btn btn-ghost" target="_blank">⭐ View on GitHub</a>
+    </div>
+  </section>
+  <div class="status-bar">
+    <div class="si"><div class="dot"></div> API Online</div>
+    <div class="si"><div class="dot"></div> Nginx Active</div>
+    <div class="si"><div class="dot"></div> Prometheus Scraping</div>
+    <div class="si"><div class="dot y"></div> ngrok: Setup Required</div>
+  </div>
+  <h2 class="sec-title">Everything You Need</h2>
+  <p class="sec-sub">A complete internal PaaS in one stack</p>
+  <div class="grid">
+    <div class="card"><div class="card-icon">🤖</div><h3>AI Code Review</h3><p>Every push is automatically reviewed by DeepSeek AI — security, performance, and quality checks before deploy.</p></div>
+    <div class="card"><div class="card-icon">🚀</div><h3>Auto GitOps Deploy</h3><p>Push to any GitHub repo and VulcanPaaS clones, detects the project type, builds a Docker image, and serves it live.</p></div>
+    <div class="card"><div class="card-icon">📊</div><h3>Real-time Metrics</h3><p>Prometheus scrapes the API every 15 seconds. Grafana visualises request rates, errors, and container health live.</p></div>
+    <div class="card"><div class="card-icon">🔁</div><h3>One-click Rollback</h3><p>Every deployment is tracked. Roll back to any previous successful build from the dashboard instantly.</p></div>
+    <div class="card"><div class="card-icon">🐳</div><h3>Docker Native</h3><p>Supports Dockerfile, React, Vite, Node.js, and static sites. Auto-generates Dockerfiles when needed.</p></div>
+    <div class="card"><div class="card-icon">💬</div><h3>VulcanBot AI Chat</h3><p>Ask VulcanBot about deployments, metrics, or app status in plain English. Powered by DeepSeek AI.</p></div>
+  </div>
+  <div class="pipeline">
+    <h3>⚡ Deployment Pipeline</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-label">git push</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="step-num">2</div><div class="step-label">Webhook</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="step-num">3</div><div class="step-label">AI Review</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="step-num">4</div><div class="step-label">Clone</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="step-num">5</div><div class="step-label">Docker Build</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="step-num">6</div><div class="step-label">Live /apps/</div></div>
+    </div>
+  </div>
+  <h2 class="sec-title">Platform Services</h2>
+  <p class="sec-sub">All running on localhost</p>
+  <div class="links">
+    <a href="/" class="lc"><span class="lc-icon">🖥️</span><div><div class="lc-name">Dashboard</div><div class="lc-label">localhost/</div></div></a>
+    <a href="/api/health" class="lc"><span class="lc-icon">🔌</span><div><div class="lc-name">API Health</div><div class="lc-label">localhost/api/health</div></div></a>
+    <a href="/grafana/" class="lc"><span class="lc-icon">📈</span><div><div class="lc-name">Grafana</div><div class="lc-label">localhost/grafana/</div></div></a>
+    <a href="/prometheus/" class="lc"><span class="lc-icon">🔥</span><div><div class="lc-name">Prometheus</div><div class="lc-label">localhost/prometheus/</div></div></a>
+  </div>
+  <footer>Built with <span>🔥</span> by VulcanPaaS — AI-powered internal developer platform</footer>
+</div>
+</body>
+</html>
