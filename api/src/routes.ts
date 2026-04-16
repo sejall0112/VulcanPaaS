@@ -201,7 +201,7 @@ Rules:
     if (!target) return reply.status(404).send({ error: 'Not found' });
     deployments.forEach(d => {
       if (d.id === id) d.status = 'active';
-      else if ('superseded';
+      else if (d.status === 'active' && d.repo === target.repo && d.branch === target.branch) d.status = 'failed';
     });
     return { message: `Rolled back to deployment ${id} for ${target.repo}@${target.branch}` };
   });
@@ -227,4 +227,3 @@ Rules:
     return register.metrics();
   });
 }
-

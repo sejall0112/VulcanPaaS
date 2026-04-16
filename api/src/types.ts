@@ -4,7 +4,7 @@ export interface Deployment {
   branch: string;
   commitHash: string;
   message: string;
-  status: 'active' | 'failed' | 'deploying' | 'superseded';
+  status: 'active' | 'failed' | 'deploying';
   date: string;
   review?: string;
   url?: string;
