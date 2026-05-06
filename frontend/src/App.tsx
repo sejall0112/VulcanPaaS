@@ -218,9 +218,9 @@ export default function App() {
                 <div style={{ width: '100%' }}>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
                     <h3 style={{ fontFamily: 'monospace', fontSize: '1rem' }}>{dep.commitHash}</h3>
-                    <span className={`badge ${dep.status}`}>
+                    <span className={`badge ${dep.status === "superseded" ? "superseded" : dep.status}`}>
                       {dep.status === 'deploying' && <span className="loader" style={{ marginRight: 4 }} />}
-                      {dep.status}
+                      {dep.status === "superseded" ? "superseded" : dep.status}
                     </span>
                   </div>
                   <p style={{ fontWeight: 500, marginBottom: '4px' }}>{dep.message}</p>

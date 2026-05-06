@@ -66,6 +66,12 @@ export function setupRoutes(fastify: FastifyInstance, register: client.Registry)
       date: new Date().toISOString()
     };
     deployments.unshift(deployment);
+    // Mark previous deployments for same repo+branch as superseded
+    deployments.forEach(d => {
+      if (d.id !== deployment.id && d.repo === repoFullName && d.branch === branch && d.status === 'active') {
+        d.status = 'superseded' as any;
+      }
+    });
 
     const repoConfig = repoRegistry.get(repoFullName)!;
     repoConfig.lastBranch = branch;
