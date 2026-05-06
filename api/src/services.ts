@@ -148,7 +148,7 @@ export function reloadNginx(): void {
   });
 }
 
-// --- Build & Deploy App ---
+// -- Build & Deploy App --
 export function buildAndDeployApp(
   repoDir: string,
   type: ProjectType,
