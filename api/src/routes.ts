@@ -138,7 +138,7 @@ Rules:
 3. Answer the user's question directly based on the provided context if relevant.`;
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
+      const apiKey = process.env.GROQ_API_KEY;
       if (!apiKey) {
         const msg = message.toLowerCase();
         let botResponse = "I am VulcanBot. How can I help you today?";
@@ -165,9 +165,9 @@ Rules:
       }
 
       const response = await axios.post(
-        'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        'https://api.groq.com/openai/v1/chat/completions',
         {
-          model: 'gemini-2.0-flash',
+          model: 'llama3-8b-8192',
           messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }]
         },
         { headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' } }
@@ -175,7 +175,7 @@ Rules:
       return { reply: response.data.choices[0].message.content };
     } catch (error: any) {
       fastify.log.error(error.message);
-      return reply.status(500).send({ error: 'Failed to contact AI provider' });
+      return { reply: "I'm having trouble connecting to my AI brain (Groq API). Please try again later!" };
     }
   });
 

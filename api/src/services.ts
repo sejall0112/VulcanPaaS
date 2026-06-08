@@ -305,9 +305,9 @@ export function buildAndDeployApp(
   });
 }
 
-// --- AI Code Review (Google Gemini Flash) ---
+// --- AI Code Review (Groq) ---
 export async function analyzeCommitWithDeepseek(repo: string, branch: string, commitMsg: string, patch: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   const systemPrompt = `You are a strict, senior DevOps Code Reviewer. Analyze the provided Git patch and produce a highly professional, vibrant, concise report in exactly this format. Do not add any extra text outside this structure:
 
@@ -337,9 +337,9 @@ export async function analyzeCommitWithDeepseek(repo: string, branch: string, co
 
   try {
     const response = await axios.post(
-      'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'gemini-2.0-flash',
+        model: 'llama3-8b-8192',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Repo: ${repo}\nBranch: ${branch}\nCommit: ${commitMsg}\nChanged files:\n${patch}` }
@@ -349,8 +349,8 @@ export async function analyzeCommitWithDeepseek(repo: string, branch: string, co
     );
     return response.data.choices[0].message.content;
   } catch (error: any) {
-    console.error('[AI Review] Gemini error:', error.response?.data?.error?.message || error.message);
-    return '⚠️ AI review failed — check your GEMINI_API_KEY.';
+    console.error('[AI Review] Groq error:', error.response?.data || error.message);
+    return '⚠️ AI review failed — ' + (error.response?.data?.error?.message || 'check your GROQ_API_KEY or rate limits.');
   }
 }
 
