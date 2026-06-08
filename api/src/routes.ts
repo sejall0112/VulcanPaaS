@@ -10,6 +10,7 @@ import {
 } from './services';
 import client from 'prom-client';
 import axios from 'axios';
+import os from 'os';
 
 export function setupRoutes(fastify: FastifyInstance, register: client.Registry) {
   
@@ -234,5 +235,20 @@ Rules:
   fastify.get('/metrics', async (request: any, reply: any) => {
     reply.header('Content-Type', register.contentType);
     return register.metrics();
+  });
+
+  fastify.get('/system-status', async () => {
+    const cpus = os.cpus();
+    const load = os.loadavg()[0];
+    const cpuPercent = Math.min(100, Math.round((load / cpus.length) * 100));
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const ramUsageGB = (totalMem - freeMem) / (1024 ** 3);
+    const totalRamGB = Math.round(totalMem / (1024 ** 3));
+    return {
+      cpu: cpuPercent,
+      ram: parseFloat(ramUsageGB.toFixed(1)),
+      totalRam: totalRamGB
+    };
   });
 }

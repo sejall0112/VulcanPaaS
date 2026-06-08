@@ -317,13 +317,19 @@ function MockServerMetrics() {
   const [net, setNet] = useState(85);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Fluctuates between 10-20% for CPU
-      setCpu(Math.floor(Math.random() * 11) + 10);
-      // Fluctuates slightly around 4GB for RAM
-      setRam(+(4.0 + Math.random() * 0.5).toFixed(1));
-      // Network ping 40-80ms
-      setNet(Math.floor(Math.random() * 40) + 40);
+    const interval = setInterval(async () => {
+      try {
+        const start = Date.now();
+        const res = await fetch('/api/system-status');
+        if (res.ok) {
+          const data = await res.json();
+          setCpu(data.cpu);
+          setRam(data.ram);
+          setNet(Date.now() - start);
+        }
+      } catch (err) {
+        console.error('Failed to fetch system metrics', err);
+      }
     }, 2000);
     return () => clearInterval(interval);
   }, []);
@@ -343,7 +349,7 @@ function MockServerMetrics() {
         <div className="metric-box">
           <HardDrive size={24} color="#3fb950" />
           <div className="metric-value">{ram} GB</div>
-          <div className="metric-label">RAM (16GB Total)</div>
+          <div className="metric-label">RAM Usage</div>
         </div>
         <div className="metric-box">
           <Activity size={24} color="#ff7b72" />
