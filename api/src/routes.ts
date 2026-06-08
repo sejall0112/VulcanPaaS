@@ -9,6 +9,7 @@ import {
   buildAndDeployApp
 } from './services';
 import client from 'prom-client';
+import axios from 'axios';
 
 export function setupRoutes(fastify: FastifyInstance, register: client.Registry) {
   
@@ -218,7 +219,6 @@ Rules:
   // --- Metrics & Health ---
   fastify.get('/metrics-data', async (request: any, reply: any) => {
     try {
-      const axios = require('axios');
       const end = Math.floor(Date.now() / 1000);
       const start = end - 300;
       const url = `http://prometheus:9090/api/v1/query_range?query=rate(http_requests_total[1m])&start=${start}&end=${end}&step=15`;
