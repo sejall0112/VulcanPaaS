@@ -138,7 +138,7 @@ Rules:
 3. Answer the user's question directly based on the provided context if relevant.`;
 
     try {
-      const apiKey = process.env.DEEPSEEK_API_KEY;
+      const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
         const msg = message.toLowerCase();
         let botResponse = "I am VulcanBot. How can I help you today?";
@@ -164,11 +164,14 @@ Rules:
         return { reply: botResponse };
       }
 
-      const axios = require('axios');
-      const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
-        model: 'deepseek-chat',
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }]
-      }, { headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }});
+      const response = await axios.post(
+        'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        {
+          model: 'gemini-2.0-flash',
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }]
+        },
+        { headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' } }
+      );
       return { reply: response.data.choices[0].message.content };
     } catch (error: any) {
       fastify.log.error(error.message);
