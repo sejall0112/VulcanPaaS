@@ -14,7 +14,8 @@ const seenCommits: Map<string, string> = new Map();
 
 // --- GitHub Commit Poller ---
 // Replaces ngrok: polls GitHub API for new commits instead of waiting for webhooks.
-export async function pollGitHubRepos() {
+// seedOnly=true on startup: just records current SHAs without deploying anything.
+export async function pollGitHubRepos(seedOnly = false) {
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
     console.warn('[Poller] GITHUB_TOKEN not set — polling disabled.');
@@ -53,17 +54,23 @@ export async function pollGitHubRepos() {
       const commitMsg: string = commitRes.data.commit.message.split('\n')[0];
       const commitFiles: string[] = commitRes.data.files?.map((f: any) => f.filename) ?? [];
 
-      const seenKey = repoKey;
-      if (seenCommits.get(seenKey) === latestSha) continue; // no new commits
+      // Seed run: just record SHA and move on — no deployments
+      if (seedOnly) {
+        seenCommits.set(repoKey, latestSha);
+        console.info(`[Poller] Seeded ${repoFullName}@${branch} → ${shortSha}`);
+        continue;
+      }
+
+      if (seenCommits.get(repoKey) === latestSha) continue; // no new commits
 
       // Skip if we already have a deployment for this exact commit
       if (deployments.some(d => d.repo === repoFullName && d.commitHash === shortSha)) {
-        seenCommits.set(seenKey, latestSha);
+        seenCommits.set(repoKey, latestSha);
         continue;
       }
 
       console.info(`[Poller] New commit detected: ${repoFullName}@${branch} (${shortSha}) — ${commitMsg}`);
-      seenCommits.set(seenKey, latestSha);
+      seenCommits.set(repoKey, latestSha);
 
       // Register repo if not already known
       if (!repoRegistry.has(repoFullName)) {
@@ -136,8 +143,12 @@ export async function pollGitHubRepos() {
 export function startGitHubPoller() {
   const intervalMs = parseInt(process.env.GITHUB_POLL_INTERVAL || '60000', 10);
   console.info(`[Poller] Starting GitHub commit poller — interval: ${intervalMs / 1000}s`);
-  pollGitHubRepos(); // run immediately on startup
-  setInterval(pollGitHubRepos, intervalMs);
+  // First: seed current SHAs silently (no deployments for pre-existing commits)
+  pollGitHubRepos(true).then(() => {
+    console.info('[Poller] Seed complete — now watching for new commits...');
+    // Then: start the real polling loop
+    setInterval(() => pollGitHubRepos(false), intervalMs);
+  });
 }
 
 // --- GitHub Webhook Signature Verification ---
