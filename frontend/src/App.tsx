@@ -4,11 +4,14 @@ import ChatWidget from './ChatWidget';
 
 interface Deployment {
   id: string;
+  repo: string;
+  branch: string;
   commitHash: string;
   message: string;
   status: 'active' | 'failed' | 'deploying' | 'superseded';
   date: string;
   review?: string;
+  url?: string;
 }
 
 interface MetricPoint { time: number; value: number; }
@@ -167,22 +170,34 @@ function PrometheusChart() {
 // --- Main App ---
 export default function App() {
   const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [fetchError, setFetchError] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchDeployments = async () => {
+    try {
+      const res = await fetch('/api/deployments');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setDeployments(data);
+        setFetchError(false);
+        setLastUpdated(new Date());
+      }
+    } catch (e) {
+      console.error('Failed to fetch deployments:', e);
+      setFetchError(true);
+    }
+  };
 
   useEffect(() => {
-    const fetch_ = async () => {
-      try {
-        const res = await fetch('/api/deployments');
-        const data = await res.json();
-        if (Array.isArray(data)) setDeployments(data);
-      } catch {}
-    };
-    fetch_();
-    const t = setInterval(fetch_, 3000);
+    fetchDeployments();
+    const t = setInterval(fetchDeployments, 3000);
     return () => clearInterval(t);
   }, []);
 
   const handleRollback = async (id: string) => {
     await fetch(`/api/deployments/${id}/rollback`, { method: 'POST' });
+    fetchDeployments();
   };
 
   return (
@@ -198,12 +213,33 @@ export default function App() {
       <div className="grid">
         {/* Deployments Panel */}
         <div className="card">
-          <div className="card-header">
-            <RefreshCw size={20} color="#3fb950" />
-            <h2>Deployments & AI Reviews</h2>
+          <div className="card-header" style={{ justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <RefreshCw size={20} color="#3fb950" />
+              <h2>Deployments &amp; AI Reviews</h2>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {lastUpdated && (
+                <span style={{ fontSize: '0.7rem', color: '#8b949e' }}>
+                  Updated {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
+              <button
+                onClick={fetchDeployments}
+                title="Refresh deployments"
+                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+              >
+                <RefreshCw size={12} /> Refresh
+              </button>
+            </div>
           </div>
+          {fetchError && (
+            <div style={{ background: 'rgba(248,81,73,0.1)', border: '1px solid rgba(248,81,73,0.3)', borderRadius: '6px', padding: '0.75rem 1rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#ff7b72' }}>
+              ⚠️ Could not reach API — is the server running?
+            </div>
+          )}
           <div className="list">
-            {deployments.length === 0 ? (
+            {deployments.length === 0 && !fetchError ? (
               <div style={{ padding: '2rem', textAlign: 'center' }}>
                 <Bot size={40} color="#8b949e" style={{ marginBottom: '1rem', display: 'block', margin: '0 auto 1rem' }} />
                 <p style={{ color: '#8b949e', marginBottom: '1rem' }}>No deployments yet. Trigger with:</p>
@@ -216,17 +252,31 @@ export default function App() {
             ) : deployments.map(dep => (
               <div key={dep.id} className="list-item">
                 <div style={{ width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
                     <h3 style={{ fontFamily: 'monospace', fontSize: '1rem' }}>{dep.commitHash}</h3>
-                    <span className={`badge ${dep.status === "superseded" ? "superseded" : dep.status}`}>
+                    <span className={`badge ${dep.status === 'superseded' ? 'superseded' : dep.status}`}>
                       {dep.status === 'deploying' && <span className="loader" style={{ marginRight: 4 }} />}
-                      {dep.status === "superseded" ? "superseded" : dep.status}
+                      {dep.status}
                     </span>
+                    {dep.url && dep.status === 'active' && (
+                      <a href={dep.url} target="_blank" rel="noreferrer" style={{ marginLeft: 'auto', textDecoration: 'none' }}>
+                        <button style={{ padding: '0.15rem 0.5rem', fontSize: '0.7rem' }}>
+                          <ExternalLink size={10} /> Open App
+                        </button>
+                      </a>
+                    )}
                   </div>
+                  {(dep.repo || dep.branch) && (
+                    <p style={{ fontSize: '0.75rem', color: '#58a6ff', marginBottom: '4px', fontFamily: 'monospace' }}>
+                      {dep.repo && <span>📦 {dep.repo}</span>}
+                      {dep.repo && dep.branch && <span style={{ color: '#8b949e', margin: '0 4px' }}>·</span>}
+                      {dep.branch && <span style={{ color: '#a371f7' }}>🌿 {dep.branch}</span>}
+                    </p>
+                  )}
                   <p style={{ fontWeight: 500, marginBottom: '4px' }}>{dep.message}</p>
                   <p style={{ fontSize: '0.75rem', color: '#8b949e', marginBottom: '10px' }}>{new Date(dep.date).toLocaleString()}</p>
                   {dep.review && <ReviewCard review={dep.review} />}
-                  {dep.status === 'failed' && (
+                  {(dep.status === 'failed' || dep.status === 'superseded') && (
                     <button className="primary" style={{ marginTop: '12px' }} onClick={() => handleRollback(dep.id)}>
                       <Undo size={14} /> Rollback to This
                     </button>
