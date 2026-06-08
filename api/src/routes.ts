@@ -167,7 +167,7 @@ Rules:
       const response = await axios.post(
         'https://api.groq.com/openai/v1/chat/completions',
         {
-          model: 'llama3-8b-8192',
+          model: 'llama-3.1-8b-instant',
           messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }]
         },
         { headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' } }
