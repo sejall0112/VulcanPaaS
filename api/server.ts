@@ -1,16 +1,15 @@
 import Fastify from 'fastify';
 import client from 'prom-client';
 import dotenv from 'dotenv';
-import { syncGitHubWebhooks } from './src/services';
+import { startGitHubPoller } from './src/services';
 import { setupRoutes } from './src/routes';
 
 dotenv.config();
 
 const fastify = Fastify({ logger: true });
 
-// --- Auto Webhook Sync ---
-syncGitHubWebhooks();
-setInterval(syncGitHubWebhooks, 5 * 60 * 1000);
+// --- GitHub Commit Poller (replaces ngrok webhook approach) ---
+startGitHubPoller();
 
 // --- Prometheus Metrics Setup ---
 const register = new client.Registry();

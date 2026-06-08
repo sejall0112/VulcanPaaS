@@ -4,53 +4,140 @@ import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 import { ProjectType } from './types';
-import { deployments, appRegistry } from './state';
+import { deployments, repoRegistry, appRegistry, allocatePort } from './state';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// --- Auto Webhook Sync ---
-export async function syncGitHubWebhooks() {
+// Tracks the latest seen commit SHA per "repoFullName:branch" to avoid reprocessing
+const seenCommits: Map<string, string> = new Map();
+
+// --- GitHub Commit Poller ---
+// Replaces ngrok: polls GitHub API for new commits instead of waiting for webhooks.
+export async function pollGitHubRepos() {
   const token = process.env.GITHUB_TOKEN;
-  const targetUrl = process.env.WEBHOOK_URL;
-  const secret = process.env.GITHUB_WEBHOOK_SECRET;
-  
-  if (!token || !targetUrl) return;
+  if (!token) {
+    console.warn('[Poller] GITHUB_TOKEN not set — polling disabled.');
+    return;
+  }
 
+  const headers = { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' };
+
+  // Discover all repos the token can access (owned + collaborator)
+  let allRepos: any[] = [];
   try {
-    const reposRes = await axios.get('https://api.github.com/user/repos?per_page=100&affiliation=owner,collaborator', {
-      headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-    });
+    const res = await axios.get(
+      'https://api.github.com/user/repos?per_page=100&affiliation=owner,collaborator&sort=pushed',
+      { headers }
+    );
+    allRepos = res.data.filter((r: any) => !r.fork && !r.archived);
+  } catch (err: any) {
+    console.error(`[Poller] Failed to list repos: ${err.message}`);
+    return;
+  }
 
-    for (const repo of reposRes.data) {
-      if (repo.fork || repo.archived) continue;
+  for (const repo of allRepos) {
+    const repoFullName: string = repo.full_name;
+    const cloneUrl: string = repo.clone_url;
+    const branch: string = repo.default_branch || 'main';
+    const repoKey = `${repoFullName}:${branch}`;
 
-      const hooksRes = await axios.get(repo.hooks_url, {
-        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+    try {
+      // Get latest commit on default branch
+      const commitRes = await axios.get(
+        `https://api.github.com/repos/${repoFullName}/commits/${branch}`,
+        { headers }
+      );
+      const latestSha: string = commitRes.data.sha;
+      const shortSha = latestSha.substring(0, 7);
+      const commitMsg: string = commitRes.data.commit.message.split('\n')[0];
+      const commitFiles: string[] = commitRes.data.files?.map((f: any) => f.filename) ?? [];
+
+      const seenKey = repoKey;
+      if (seenCommits.get(seenKey) === latestSha) continue; // no new commits
+
+      // Skip if we already have a deployment for this exact commit
+      if (deployments.some(d => d.repo === repoFullName && d.commitHash === shortSha)) {
+        seenCommits.set(seenKey, latestSha);
+        continue;
+      }
+
+      console.info(`[Poller] New commit detected: ${repoFullName}@${branch} (${shortSha}) — ${commitMsg}`);
+      seenCommits.set(seenKey, latestSha);
+
+      // Register repo if not already known
+      if (!repoRegistry.has(repoFullName)) {
+        repoRegistry.set(repoFullName, { fullName: repoFullName, cloneUrl, registered: new Date().toISOString() });
+      }
+
+      const repoShort = repoFullName.split('/')[1];
+      const slug = `${repoShort}-${branch}`.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
+      const port = allocatePort(repoKey);
+
+      const deployment = {
+        id: Math.random().toString(36).substr(2, 9),
+        repo: repoFullName,
+        branch,
+        commitHash: shortSha,
+        message: commitMsg,
+        status: 'deploying' as const,
+        date: new Date().toISOString()
+      };
+      deployments.unshift(deployment);
+
+      // Mark previous active deployments for same repo+branch as superseded
+      deployments.forEach(d => {
+        if (d.id !== deployment.id && d.repo === repoFullName && d.branch === branch && d.status === 'active') {
+          d.status = 'superseded' as any;
+        }
       });
-      
-      const exists = hooksRes.data.some((h: any) => h.config.url === targetUrl);
-      
-      if (!exists) {
-        await axios.post(repo.hooks_url, {
-          name: 'web',
-          active: true,
-          events: ['push'],
-          config: {
-            url: targetUrl,
-            content_type: 'json',
-            insecure_ssl: '0',
-            secret: secret || ''
+
+      const repoConfig = repoRegistry.get(repoFullName)!;
+      repoConfig.lastBranch = branch;
+      repoConfig.lastDeployment = deployment.id;
+
+      // Run AI review + clone + build in background
+      (async () => {
+        try {
+          const patch = commitFiles.join('\n');
+          deployment.review = await analyzeCommitWithDeepseek(repoFullName, branch, commitMsg, patch);
+
+          const repoDir = await cloneOrPullRepo(cloneUrl, repoFullName, branch);
+          const projectType = detectProjectType(repoDir);
+          console.info(`[Poller] Detected project type for ${repoFullName}: ${projectType}`);
+
+          if (projectType === 'unknown') {
+            deployment.status = 'failed';
+            deployment.review += '\n\n⚠️ **Could not auto-detect project type.** Add a `Dockerfile` to your repo to enable deployment.';
+            return;
           }
-        }, {
-          headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-        });
-        console.info(`✅ Auto-injected VulcanPaaS Webhook into repository: ${repo.full_name}`);
+
+          if (projectType !== 'dockerfile') {
+            generateDockerfile(repoDir, projectType, slug);
+          }
+
+          buildAndDeployApp(repoDir, projectType, slug, port, deployment.id);
+        } catch (err: any) {
+          console.error(`[Poller] Pipeline failed for ${repoFullName}@${branch}: ${err.message}`);
+          deployment.status = 'failed';
+        }
+      })();
+
+    } catch (err: any) {
+      // 409 = empty repo, 404 = no access — skip silently
+      if (err.response?.status !== 409 && err.response?.status !== 404) {
+        console.error(`[Poller] Error checking ${repoFullName}: ${err.message}`);
       }
     }
-  } catch (err: any) {
-    console.error(`Webhook Auto-Sync failed: ${err.message}`);
   }
+}
+
+// Start the poller on a schedule
+export function startGitHubPoller() {
+  const intervalMs = parseInt(process.env.GITHUB_POLL_INTERVAL || '60000', 10);
+  console.info(`[Poller] Starting GitHub commit poller — interval: ${intervalMs / 1000}s`);
+  pollGitHubRepos(); // run immediately on startup
+  setInterval(pollGitHubRepos, intervalMs);
 }
 
 // --- GitHub Webhook Signature Verification ---
