@@ -6,7 +6,7 @@ interface Deployment {
   id: string;
   commitHash: string;
   message: string;
-  status: 'active' | 'failed' | 'deploying';
+  status: 'active' | 'failed' | 'deploying' | 'superseded';
   date: string;
   review?: string;
 }
